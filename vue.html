@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://unpkg.com/vue@2.5.2/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.0/axios.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+</head>
+<body>
+
+<div id='app'>
+    <div>
+        <cmnt-component></cmnt-component>
+    </div>
+
+</div>
+
+<script>
+
+    var commentList = [{comment: 'sample comment'},{comment: 'sample comment'}, {comment: 'sample comment'}, {comment: 'sample comment'}, {comment: 'sample comment'}]
+    var replyList = []
+    Vue.component('cmnt-component',{
+        template:'<div>\
+<div>\
+<h4>Comments  <span class="badge">{{commentList.length}}</span></h4>\
+</div>\
+<cmntbox-component :type="comment"></cmntbox-component>\
+<commentlist-component :type="comment"></commentlist-component>\
+</div>\
+</div>',
+        data: function(){
+            return {
+                reply:'reply',
+                comment:'comment',
+                commentList: commentList,
+
+            }
+        }, methods:{
+            actionReply: function (id) {
+                if (id === this.selected_comment || this.replypart === false) {
+                    this.replypart = !this.replypart
+                }
+                this.selected_comment = id
+            },
+        }
+    })
+
+    Vue.component('cmntbox-component',{
+        template:'<form id="con-comments-form" class="form-group">\
+        <textarea class="form-control" rows="2" @click="btnshow = true"  v-model="comment" :placeholder="\'Add a \'+type+\'...\'"></textarea>\
+        <div v-if="btnshow" style="margin-top: 10px; margin-bottom: 10px;">\
+        <button class="btn btn-custom" @click.prevent="onCancel">Cancel</button>\
+        <button type="submit" class="pull-right btn btn-primary btn-custom" @click.prevent="onSubmit(type, comment_id)" :disabled="comment==\'\'">Submit</button>\
+        </div></form>',
+        props:['type', 'comment_id'],
+        data: function () {
+            return{
+                comment:'',
+                btnshow: false,
+            };
+        },
+        methods: {
+            onCancel: function () {
+                var root = this
+                root.comment = '';
+                root.btnshow = false;
+            },
+            onSubmit: function () {
+                console.log(this.type)
+                if(this.type == 'comment'){
+                    commentList.push({comment: this.comment})
+                    this.comment = ''
+                    this.btnshow = false
+                }else{
+                    console.log(this.comment_id)
+                    console.log(this.comment)
+                    console.log(replyList)
+                    replyList[this.comment_id].push({reply: this.comment})
+                }
+
+            }
+        }
+    })
+
+    Vue.component('like-component',{
+        template: '<span @click="btnliked"><i :class="[\'fa\', \'fa-thumbs-up\', \'like-btn\', liked ? \'liked\' : \'\']" aria-hidden="true"></i></span>',
+        data: function(){
+            return{
+                liked:false,
+            }
+        },
+        methods:{
+            btnliked: function () {
+                this.liked = !this.liked
+            }
+        }
+    })
+
+    Vue.component('commentlist-component',{
+        template:'\
+        <div v-if="type === \'comment\'">\
+        <div class="comments" v-for="(comment, id) in commentList">\
+        <div>\
+        <span>{{id}}</span>\
+        <span>{{comment.comment}}</span>\
+        <div>\
+        <span class="reply-spa" @click="actionReply(id)">Reply </span>\
+        <like-component></like-component>\
+        <div>\
+        <cmntbox-component v-if="(selected_comment == id) && replypart" :type="reply" :comment_id="id"></cmntbox-component>\
+        <commentlist-component :comment_id = "id"></commentlist-component>\
+        </div>\</div>\
+        </div>\
+        </div>\
+        </div>\
+        <div v-else>\
+        <div><span class="v-replies" @click="viewReplies(comment_id)">View Replies</span></div>\
+        <div v-if="replylistshow">\
+        <div v-if="replyList[comment_id].length > 0">\
+        <div v-for="(reply, id) in replyList[comment_id]"><span>{{id}}</span> <span>{{reply.reply}}</span></div>\
+        </div>\
+        </div>\
+        </div> ',
+        props:['type', 'comment_id'],
+        data: function() {
+            return {
+                reply: 'reply',
+                comment: 'comment',
+                commentList: commentList,
+                selected_comment: 0,
+                replypart: false,
+                replylistshow:false,
+                replyList: replyList
+            }
+
+        },
+        methods:{
+            actionReply: function(id) {
+                if (id === this.selected_comment || this.replypart === false) {
+                    this.replypart = !this.replypart
+                }
+                this.selected_comment = id
+            },
+            viewReplies: function (id) {
+                this.replyList[id] = [{'reply': 'sample reply'},
+                    {'reply': 'sample reply'},{'reply': 'sample reply'}, {'reply': 'sample reply'}, {'reply': 'sample reply'}]
+                this.replylistshow = !this.replylistshow
+            },
+        },
+    })
+
+    new Vue({
+        el: '#app',
+        data: {
+
+        },
+        methods:{
+
+        }
+    })</script>
+<style>.comments{
+    margin-bottom:20px;
+}
+.reply-spa{
+    cursor: pointer;
+}
+.reply-spa:hover{
+    opacity: .7;
+}
+
+.v-replies{
+    cursor: pointer;
+}
+
+.v-replies:hover{
+    text-decoration: underline;
+    opacity: .7;
+}
+
+.like-btn{
+    cursor: pointer;
+}
+.like-btn:hover{
+    color: lightsteelblue;
+}
+
+.liked{
+    color:steelblue;
+}
+</style>
+
+</body>
+</html>
